@@ -18,7 +18,7 @@ public class ReadUSB : MonoBehaviour
   // Change this to be compatible with your computer.
   // The easiest way to check the port anme is to check it on Arduino IDE.
   // For example, "COM4" on Windows and "/dev/tty.usbmodem2815011" on Mac.
-  const string portName = "COM4";
+  const string portName = "COM3";
 
 
     SerialPort serialPort = new SerialPort(portName, baudrate);

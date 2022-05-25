@@ -1,15 +1,4 @@
 <!DOCTYPE html>
-<!------------------------------------------------------------------------------
-| Copyright (C) 2012-2013 Leap Motion, Inc. All rights reserved.               |
-| Leap Motion proprietary and confidential. Not for distribution.              |
-| Use subject to the terms of the Leap Motion SDK Agreement available at       |
-| https://developer.leapmotion.com/sdk_agreement, or another agreement         |
-| between Leap Motion and you, your company or other organization.             |
-|                                                                              |
-|                                                                              |
-| This file is used to collect datapoints for training. When a key is pressed, |
-| the current hand position is saved  |
-------------------------------------------------------------------------------->
 <html>
 <head>
 <title>Leap WebSocket JSON Viewer</title>
@@ -26,9 +15,38 @@ if ((typeof(WebSocket) == 'undefined') &&
     WebSocket = MozWebSocket;
 }
 
-var save = false;
 
-var fso = CreateObject("Scripting.FileSystemObject"); 
+/**
+The idea here is to communicate between three processes—a live websocket that's publishing to a 
+callback function, an event listener for alphanumeric keystrokes, and a file writer. 
+
+We establish global state through current_key, the label of the ASL hand position to be saved,
+saving, to let the Leap Motion websocket callback know that we want to save the current hand position (+
+~1/100 seconds in time), and count, to keep track of how many hand positions we've saved so far. 
+
+Because webpages can't easily write out webpages, the third component of this script is a button that
+generates a downloadable CSV with all of the recorded data. 
+*/
+// internal state
+var current_key = ""; 		// current key
+var saving = false;			// currently saving
+var count = 1;				// total measurements 
+var prev_key = "";
+var same_key_count = 1;
+const header = `id, label, s, tx, ty, tz, r11, r12, r13, r21, r22, r23, r31, r32, r33, hand_dir_1, hand_dir_2, hand_dir_3,  thumb_dir_1, thumb_dir_2, thumb_dir_3, 	thumb_meta_center_1, thumb_meta_center_2, thumb_meta_center_3, thumb_meta_dir_1, thumb_meta_dir_2, thumb_meta_dir_3, 	thumb_prox_center_1, thumb_prox_center_2, thumb_prox_center_3, thumb_prox_dir_1, thumb_prox_dir_2, thumb_prox_dir_3, 	thumb_int_center_1, thumb_int_center_2, thumb_int_center_3, thumb_int_dir_1, thumb_int_dir_2, thumb_int_dir_3, 	thumb_dist_center_1, thumb_dist_center_2, thumb_dist_center_3, thumb_dist_dir_1, thumb_dist_dir_2, thumb_dist_dir_3, 	thumb_tip_pos_1, thumb_tip_pos_2, thumb_tip_pos_3, index_dir_1, index_dir_2, index_dir_3, 	index_meta_center_1, index_meta_center_2, index_meta_center_3, index_meta_dir_1, index_meta_dir_2, index_meta_dir_3, 	index_prox_center_1, index_prox_center_2, index_prox_center_3, index_prox_dir_1, index_prox_dir_2, index_prox_dir_3, 	index_int_center_1, index_int_center_2, index_int_center_3, index_int_dir_1, index_int_dir_2, index_int_dir_3, 	index_dist_center_1, index_dist_center_2, index_dist_center_3, index_dist_dir_1, index_dist_dir_2, index_dist_dir_3, 	index_tip_pos_1, index_tip_pos_2, index_tip_pos_3, middle_dir_1, middle_dir_2, middle_dir_3, 	middle_meta_center_1, middle_meta_center_2, middle_meta_center_3, middle_meta_dir_1, middle_meta_dir_2, middle_meta_dir_3, 	middle_prox_center_1, middle_prox_center_2, middle_prox_center_3, middle_prox_dir_1, middle_prox_dir_2, middle_prox_dir_3, 	middle_int_center_1, middle_int_center_2, middle_int_center_3, middle_int_dir_1, middle_int_dir_2, middle_int_dir_3, 	middle_dist_center_1, middle_dist_center_2, middle_dist_center_3, middle_dist_dir_1, middle_dist_dir_2, middle_dist_dir_3, 	middle_tip_pos_1, middle_tip_pos_2, middle_tip_pos_3, ring_dir_1, ring_dir_2, ring_dir_3, 	ring_meta_center_1, ring_meta_center_2, ring_meta_center_3, ring_meta_dir_1, ring_meta_dir_2, ring_meta_dir_3, 	ring_prox_center_1, ring_prox_center_2, ring_prox_center_3, ring_prox_dir_1, ring_prox_dir_2, ring_prox_dir_3, 	ring_int_center_1, ring_int_center_2, ring_int_center_3, ring_int_dir_1, ring_int_dir_2, ring_int_dir_3, 	ring_dist_center_1, ring_dist_center_2, ring_dist_center_3, ring_dist_dir_1, ring_dist_dir_2, ring_dist_dir_3, 	ring_tip_pos_1, ring_tip_pos_2, ring_tip_pos_3, pinkie_dir_1, pinkie_dir_2, pinkie_dir_3, 	pinkie_meta_center_1, pinkie_meta_center_2, pinkie_meta_center_3, pinkie_meta_dir_1, pinkie_meta_dir_2, pinkie_meta_dir_3, 	pinkie_prox_center_1, pinkie_prox_center_2, pinkie_prox_center_3, pinkie_prox_dir_1, pinkie_prox_dir_2, pinkie_prox_dir_3, 	pinkie_int_center_1, pinkie_int_center_2, pinkie_int_center_3, pinkie_int_dir_1, pinkie_int_dir_2, pinkie_int_dir_3, 	pinkie_dist_center_1, pinkie_dist_center_2, pinkie_dist_center_3, pinkie_dist_dir_1, pinkie_dist_dir_2, pinkie_dist_dir_3, 	pinkie_tip_pos_1, pinkie_tip_pos_2, pinkie_tip_pos_3,`;
+var lines = header + "\n";
+
+function printDataForTest(entry) {
+
+	var head_split = header.split(', ');
+	var entry_split = entry.split(', ');
+
+	var test = "";
+	for (var i = 0; i < head_split.length; i++) {
+		test += '"' + head_split[i] + '": ' + entry_split[i] + ', \n';
+	}
+	console.log(test);
+}
 
 // Create the socket with event handlers
 function init() {
@@ -57,11 +75,87 @@ function init() {
     ws.onmessage = function(event) {
         if (!paused) {
             var obj = JSON.parse(event.data);
+            // console.log(obj);
             var str = JSON.stringify(obj, undefined, 2);
             // if we're saving this position
-            if (save) {
-            	fso.OpenTextFile('')
+            if (saving) {
+            	// construct CSV entry (schema provided in "header").
+            	// console.log(obj.hands[0])
+            	var entry = count 						+ ", " + 
+            				current_key					+ ", " + 
+            				obj.hands[0].s 				+ ", " +
+            				obj.hands[0].t[0] 			+ ", " + 
+            				obj.hands[0].t[1] 			+ ", " + 
+            				obj.hands[0].t[2] 			+ ", " + 
+            				obj.hands[0].r[0][0] 		+ ", " + 
+            				obj.hands[0].r[0][1] 		+ ", " + 
+            				obj.hands[0].r[0][2] 		+ ", " + 
+            				obj.hands[0].r[1][0] 		+ ", " + 
+            				obj.hands[0].r[1][1] 		+ ", " + 
+            				obj.hands[0].r[1][2] 		+ ", " + 
+            				obj.hands[0].r[2][0] 		+ ", " + 
+            				obj.hands[0].r[2][1]	 	+ ", " + 
+            				obj.hands[0].r[2][2] 		+ ", " + 
+            				obj.hands[0].direction[0] 	+ ", " + 
+            				obj.hands[0].direction[1] 	+ ", " + 
+            				obj.hands[0].direction[2] 	+ ", ";
+
+            	obj.pointables.forEach(f => {
+            		entry+= f.direction[0]				+ ", " + 
+            				f.direction[1]				+ ", " + 
+            				f.direction[2]				+ ", " + 
+            				f.mcpPosition[0]			+ ", " + 
+            				f.mcpPosition[1]			+ ", " + 
+            				f.mcpPosition[2]			+ ", " + 
+            				f.bases[0][0][0]			+ ", " + 
+            				f.bases[0][0][1]			+ ", " + 
+            				f.bases[0][0][2]			+ ", " + 
+
+            				f.pipPosition[0]			+ ", " + 
+            				f.pipPosition[1]			+ ", " + 
+            				f.pipPosition[2]			+ ", " + 
+            				f.bases[1][0][0]			+ ", " + 
+            				f.bases[1][0][1]			+ ", " + 
+            				f.bases[1][0][2]			+ ", " + 
+
+            				f.btipPosition[0]			+ ", " + 
+            				f.btipPosition[1]			+ ", " + 
+            				f.btipPosition[2]			+ ", " + 
+            				f.bases[2][0][0]			+ ", " + 
+            				f.bases[2][0][1]			+ ", " + 
+            				f.bases[2][0][2]			+ ", " + 
+
+            				f.dipPosition[0]			+ ", " + 
+            				f.dipPosition[1]			+ ", " + 
+            				f.dipPosition[2]			+ ", " + 
+            				f.bases[3][0][0]			+ ", " + 
+            				f.bases[3][0][1]			+ ", " + 
+            				f.bases[3][0][2]			+ ", " + 
+
+            				f.stabilizedTipPosition[0]	+ ", " + 
+            				f.stabilizedTipPosition[1]	+ ", " + 
+            				f.stabilizedTipPosition[2]	+ ", "; 
+            	});
+
+            	// write out
+            	lines += entry + '\n';
+
+            	// printDataForTest(entry);
+            	if (current_key == prev_key) {
+            		same_key_count++;
+            	}
+            	else {
+            		prev_key = current_key;
+            		same_key_count = 1;
+            	}
+            	console.log('total:', count, 'current:', same_key_count, current_key);
+
+            	// update state
+            	saving = false;
+            	current_key = "";
+            	count++;
             }
+
             document.getElementById("output").innerHTML = '<pre>' + str + '</pre>';
             if (pauseOnGesture && obj.gestures.length > 0) {
                 togglePause();
@@ -102,19 +196,21 @@ function pauseForGestures() {
   }
 }
 
-
+const valid_chars = "abcdefghijklmnopqrstuvwxyz0123456789";
 function savePosition(key) {
-  var k = key.key;
-  console.log(key.key);
-  save = true;
+  if (valid_chars.includes(key.key)) {
+	  current_key = key.key;
+	  saving = true;
+  }
 }
-
 document.addEventListener('keydown', savePosition);
+
 
 </script>
 </head>
 <body onload="init();">
 <h1>Leap WebSocket JSON Viewer</h1>
+<button id="create">Create file</button> <a download="info.txt" id="downloadlink" style="display: none">Download</a>
 <button id="pause" onclick="togglePause()">Pause</button>
 <input type="checkbox" id="pauseOnGesture" onclick="pauseForGestures()">Pause on gesture</input>
 <div id="connection">WebSocket not connected</div>
@@ -124,3 +220,32 @@ document.addEventListener('keydown', savePosition);
 </div>
 </body>
 </html>
+<script type="text/javascript">
+	
+(function () {
+var textFile = null,
+  makeTextFile = function (text) {
+    var data = new Blob([text], {type: 'text/plain'});
+
+    // If we are replacing a previously generated file we need to
+    // manually revoke the object URL to avoid memory leaks.
+    if (textFile !== null) {
+      window.URL.revokeObjectURL(textFile);
+    }
+
+    textFile = window.URL.createObjectURL(data);
+
+    return textFile;
+  };
+
+
+  var create = document.getElementById('create');
+
+  create.addEventListener('click', function () {
+    var link = document.getElementById('downloadlink');
+    link.href = makeTextFile(lines);
+    link.style.display = 'block';
+  }, false);
+})();
+
+</script>

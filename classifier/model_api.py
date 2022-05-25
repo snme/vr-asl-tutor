@@ -3,15 +3,18 @@ import pickle
 import xgboost as xgb
 import numpy as np
 from flask import Flask, request, jsonify
+import urllib.parse
+import json
+import re
 
 app = Flask(__name__)
 
 # internal state/model and scaler
-with open('./scaler.pkl','rb') as f:
-    scaler = pickle.load(f)
+# with open('./scaler.pkl','rb') as f:
+#     scaler = pickle.load(f)
 
 model = xgb.XGBClassifier()
-model.load_model("alphabet.json")
+model.load_model("alphabet-simplified.json")
 
 full_names = ['ring_int_center',
  'pinkie_dist_dir',
@@ -67,11 +70,17 @@ full_names = ['ring_int_center',
 
 @app.route('/classify', methods=['POST'])
 def classify_hand_pos():
+    print('hi')
     if request.is_json:
-        req = request.get_json()
+        raw = urllib.parse.unquote(request.data.decode("utf-8"))
+        # strip trailing commas
+        raw = re.sub(",[ \t\r\n]+}", "}", raw)
+        # parse request from unity into JSON
+        req = json.loads(raw)['data']
+        print(req)
+
         # single test example
-        inp = req["data"]
-        print(inp)
+        # return 'a', 200
         # run model (scale and predict)
         """
         Rinv = np.linalg.inv(np.array([
@@ -90,10 +99,10 @@ def classify_hand_pos():
                 coord = Rinv @ coord
                 coord /= np.linalg.norm(coord)
             inp[vec+'_1'], inp[vec+'_2'], inp[vec+'_3'] = coord
-            """
+            """ 
 
         # data = scaler.transform(inp)
-        inp = np.array(list(inp.values())[2:])
+        inp = np.array(list(req.values())[2:])
         data = inp.reshape(1, -1)
         guess = model.predict(data)
         # convert guess into letter and return
