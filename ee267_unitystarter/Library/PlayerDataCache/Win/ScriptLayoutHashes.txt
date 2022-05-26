@@ -1,6 +1,6 @@
 Win
 PlayerPath?
-C:/Users/sathya/Documents/vr-asl-tutor/ee267_unitystarter/Builds/Screen/ee267_unitystarter.exe
+C:/Users/sathya/Documents/vr-asl-tutor/ee267_unitystarter/Final Build/ee267_unitystarter.exe
 SceneListBegin?
 Assets/Scenes/SampleScene.unity
 SceneListEnd?
@@ -145,9 +145,12 @@ ad9173d3a69d99153f38ed4b62226129 UnityEngine.Networking.dll:UnityEngine.Networki
 d251bf88db6c95a6b1aa0b69298da9ef UnityEngine.SpatialTracking.dll:UnityEngine.SpatialTracking.TrackedPoseDriver
 f029318299c5a94aae63e9bb13edd224 Assembly-CSharp-firstpass.dll:Leap.Unity.ProximityDetector
 04c29bbd0a0a20e355ef6ef9e76db036 Assembly-CSharp-firstpass.dll:Leap.Unity.FrameRateControls
+71bb6a6b6c8f052f948db64c7dd3ca4f Assembly-CSharp.dll:.NumRight
+71bb6a6b6c8f052f948db64c7dd3ca4f Assembly-CSharp.dll:.NumWrong
 8c2f993579fd47acbd50b7a0885b27f7 Assembly-CSharp-firstpass.dll:Leap.Unity.Interaction.InteractionManager
 eed7a53daffed1e86a518051b94b8d48 Assembly-CSharp-firstpass.dll:Leap.Unity.Interaction.AnchorGroup
 82827952c5cb10d652bddcbc54600238 Assembly-CSharp-firstpass.dll:Leap.Unity.Attachments.AttachmentPointBehaviour
+71bb6a6b6c8f052f948db64c7dd3ca4f Assembly-CSharp.dll:.Letter
 536e213326c281e546e33e6ac8e2b37a Assembly-CSharp-firstpass.dll:Leap.Unity.Examples.SimpleAnchorFeedback
 b8a5e8091ab0b8861d2add371082c5e0 Unity.TextMeshPro.dll:TMPro.TMP_SpriteAsset
 0dc384d9e42d5f1b22169cab94a56928 Assembly-CSharp-firstpass.dll:Leap.Unity.LeapImageRetriever
@@ -187,6 +190,7 @@ ef3d783c450f8f398d41b6d0331a7961 Assembly-CSharp-firstpass.dll:Leap.Unity.Exampl
 44ddd6fbe4ff89af43a988be92dd5456 Assembly-CSharp-firstpass.dll:.SimpleInteractionGlow
 7aee04316cbd5b0a33c101c6c7c67c52 Assembly-CSharp-firstpass.dll:Leap.Unity.XRHeightOffset
 df850172864d919f92a4701847177534 Assembly-CSharp.dll:.CardboardHead
+8cf07cf191fddb490b6a4e86432a1652 Assembly-CSharp.dll:.EventSystem
 41fcb072f6fe0bf238772ce0afde639c Assembly-CSharp-firstpass.dll:Leap.Unity.Examples.AutopilotSystem
 59acdec886bcdeba9fa5b13e63e38dda Assembly-CSharp-firstpass.dll:Leap.Unity.Interaction.Anchor
 9a18fefa1f895e28ab6e3bbfadc38218 Assembly-CSharp-firstpass.dll:Leap.Unity.CapsuleHand
