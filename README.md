@@ -1,8 +1,16 @@
 # American Sign Language in Virtual Reality: A Truly Interactive Fingerspelling Tutor
 ## Paper and Demo Video Links
+Please read the paper below for information on this project!
 [American Sign Language in Virtual Reality: A Truly Interactive Fingerspelling Tutor Paper](https://drive.google.com/file/d/1e00aHNuIpNkz2uvqOJvF6EL0_4jxz7lj/view?usp=sharing)
 
 [Demo Video](https://drive.google.com/file/d/13ErgM_1xgqus3dsyA19Skj1vfJiY6FA5/view?usp=sharing)
+
+## How to Run The Code
+1. You'll need to install all of the Python 3.0 packages in the preamble of `classifier/model_api.py`. Set environment variables `FLASK_APP=model_api.py`, `FLASK_ENV=development`, and run `flask run` in your CLI in that directory after installation. This will start the classifier web server.
+2. Install Unity (2018.4.20f1), Ultraleap for Unity (4.30), and Leap SDK (Orion v4).
+3. Plug in Leap Motion (classic) device and make sure it's working as expected in the Visualizer.
+4. Plug in Viewmaster as developed in EE 267. Mount the VRDuino on the Viewmaster and flash it with the `ee267_unitystarter/vrduino` files.
+5. Lastly, run the executable in `ee267_unitystarter/Final\ Build/`. Please note that my classifier was
 
 ## Source Code Description
 ### Architecture:
